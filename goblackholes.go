@@ -1,16 +1,11 @@
-package main
+package goblackholes
 
 import (
 	"fmt"
-	"github.com/golang/protobuf/proto"
-	"github.com/krzysztofromanowski94/agentproto"
-	"net"
 	"math"
 	"runtime"
 	"sync"
 	"time"
-	"os"
-	"log"
 )
 
 var (
@@ -30,20 +25,21 @@ var (
 	maxAccuracy         chan bool                  = make(chan bool, 1)
 	endComputing        chan bool                  = make(chan bool, singleServiceAmount+10)
 	exitProgram         chan bool                  = make(chan bool, 1)
-	typeOfFunction      TypeOfFunction_S           = TypeOfFunction_S{Rastrigin: true}
-	conn                net.Conn
+	//typeOfFunction      TypeOfFunction_S           = TypeOfFunction_S{Rastrigin: true}
 	//typeOfFunction TypeOfFunction_S = TypeOfFunction_S{Rosenbrock: true}
 	//typeOfFunction TypeOfFunction_S = TypeOfFunction_S{Easom: true}
-	//typeOfFunction TypeOfFunction_S = TypeOfFunction_S{McCormick: true}
+	typeOfFunction TypeOfFunction_S = TypeOfFunction_S{McCormick: true}
 	//typeOfFunction TypeOfFunction_S = TypeOfFunction_S{StringEvaluation: "20 + pow(x, 2) + pow(y, 2) - 10 * (cos(2 * PI() * x) + cos(2 * PI() * y))"}
 	i int
 )
 
-func main() {
+//func main(){}
 
-	StartComputing()
+func Start(outputChan chan *Agent) {
 
-	Utils()
+	startComputing(outputChan)
+
+	utils()
 
 	time.Sleep(10 * time.Second)
 	return
@@ -56,7 +52,7 @@ func main() {
 	}
 }
 
-func StartComputing() {
+func startComputing(outputChan chan *Agent) {
 	for i := 0; i < singleServiceAmount; i++ {
 		go func() {
 			for {
@@ -107,26 +103,14 @@ func StartComputing() {
 				default:
 					tA := <-protoChannel
 					fitnessChannel <- tA
-					toSend := new (agentproto.AgentData)
-					toSend.X = proto.Float64(tA.x)
-					toSend.Y = proto.Float64(tA.y)
-					toSend.Fitness = proto.Float64(tA.fitness)
-					toSend.Average = proto.Int32(int32(tA.times))
-					if stuff, err := proto.Marshal(toSend) ; err != nil {
-						log.Println(err)
-						os.Exit(-1)
-					} else {
-						conn.Write(stuff)
-					}
-					//toSend.Best = proto.Bool
-					//countFitness(fitnessChannel, <-eventHorizonChannel)
+					outputChan <- tA
 				}
 			}
 		}()
 	}
 }
 
-func Utils() {
+func utils() {
 	/// reports
 	go func() {
 		for {
@@ -143,19 +127,19 @@ func Utils() {
 		}
 	}()
 
-	/// check if got the best answer
-	go func() {
-		<-maxAccuracy
-		fmt.Println("It can't be bether:")
-		for i := 0; i < 4*singleServiceAmount+10; i++ {
-			endComputing <- true
-		}
-		fmt.Println(bestAgent)
-		averageStepAmount := averageStepAmount()
-		fmt.Println("averageStepAmount: ", averageStepAmount)
-		exitProgram <- true
-		return
-	}()
+	//// check if got the best answer
+	//go func() {
+	//	<-maxAccuracy
+	//	fmt.Println("It can't be bether:")
+	//	for i := 0; i < 4*singleServiceAmount+10; i++ {
+	//		endComputing <- true
+	//	}
+	//	fmt.Println(bestAgent)
+	//	averageStepAmount := averageStepAmount()
+	//	fmt.Println("averageStepAmount: ", averageStepAmount)
+	//	exitProgram <- true
+	//	return
+	//}()
 }
 
 func averageStepAmount() uint64 {
@@ -202,34 +186,5 @@ func init() {
 	//	}
 	//}()
 	bestAgent.eventHorizon = math.SmallestNonzeroFloat64
-	var err error
-	conn, err = net.Dial("tcp", "172.16.100.11:2110")
-	if err != nil {
-                log.Println(err)
-		os.Exit(-1)
 
-        }
-
-}
-
-func Connect() {
-	// waiting for connection:
-	c := make(chan string)
-	go func() {
-		for i := 0; ; i++ {
-			c <- fmt.Sprint("asd ", i)
-		}
-	}()
-	for {
-		select {
-		case s := <-c:
-			fmt.Println(s)
-		case <-time.After(time.Second * 10):
-			fmt.Println("Cannot estabilish a connection")
-			return
-		default:
-			fmt.Println("nothing")
-
-		}
-	}
 }

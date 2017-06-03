@@ -1,4 +1,4 @@
-package main
+package goblackholes
 
 import (
 	//"errors"
@@ -8,11 +8,13 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"fmt"
 )
 
 var functions map[string]govaluate.ExpressionFunction
 
 func init() {
+	fmt.Println("parseFunction init")
 	functions = make(map[string]govaluate.ExpressionFunction)
 	functions["strlen"] = func(args ...interface{}) (interface{}, error) {
 		length := len(args[0].(string))

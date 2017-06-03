@@ -1,4 +1,4 @@
-package main
+package goblackholes
 
 import (
 	//"fmt"
@@ -67,8 +67,9 @@ func getBest(output chan *Agent, input *Agent) {
 		bestAgent.x = input.x
 		bestAgent.y = input.y
 		bestAgent.fitness = input.fitness
-		bestAgent.step = averageStepAmount()
+		bestAgent.step = input.times
 		bestAgent.mutex.Unlock()
+		// ToDo channel
 		input.newPosition()
 	}
 	input.times += 1
@@ -110,7 +111,7 @@ func eventHorizon(output chan *Agent, input *Agent) {
 	)
 	go func() { xLen <- math.Pow(bestAgent.x-input.y, 2.0) }()
 	go func() { yLen <- math.Pow(bestAgent.y-input.y, 2.0) }()
-	go func() { len <- math.Pow(<-xLen+<-yLen, 0.5) }()
+	go func() { len <- math.Pow(<-xLen + <-yLen, 0.5) }()
 	if bestAgent.eventHorizon >= <-len {
 		input.newPosition()
 	}

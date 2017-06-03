@@ -1,4 +1,4 @@
-package main
+package goblackholes
 
 import (
 	"math"
@@ -6,15 +6,18 @@ import (
 )
 
 var (
-	x_1, x_2, x_3, mod uint64
-)
-
-func init() {
 	x_1 = uint64(time.Now().UnixNano())
 	x_2 = uint64(time.Now().UnixNano() / 2)
 	x_3 = uint64(time.Now().UnixNano() / 3)
 	mod = uint64(math.Pow(2, 32)) - 5
-}
+)
+
+//func init() {
+//	x_1 = uint64(time.Now().UnixNano())
+//	x_2 = uint64(time.Now().UnixNano() / 2)
+//	x_3 = uint64(time.Now().UnixNano() / 3)
+//	mod = uint64(math.Pow(2, 32)) - 5
+//}
 
 func count() (x uint64) {
 	x = (1176*x_1 + 1476*x_2 + 1776*x_3) % mod
