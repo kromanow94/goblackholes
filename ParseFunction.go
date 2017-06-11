@@ -2,13 +2,14 @@ package goblackholes
 
 import (
 	//"errors"
+	"fmt"
 	"github.com/Knetic/govaluate"
 	"log"
 	. "math"
 	"reflect"
 	"strconv"
 	"strings"
-	"fmt"
+	//"time"
 )
 
 var functions map[string]govaluate.ExpressionFunction
@@ -40,7 +41,7 @@ EvalWithParams2:
 7534605279
 EvalWithParams:
 9022396575
-ParseFunction:
+parseFunction:
 6428727151
 NewEval with const:
 8585686337
@@ -48,12 +49,12 @@ Normal function:
 45168146
 */
 
-/// @funcStr is string. It may have maximum of three parameters. Parameters must be signed as "x", "y", "z"
+/// @funcStr is string. It may have maximum of three parameters. Parameters must be signed as "X", "Y", "z"
 /// @args - at least two arguments: 1.: channel; 2.: float64
 /// example:
-/// go ParseFunction(funcStr, channelString, i, i)
-/// go EvaluateFunction(<-channelString, channelEval)
-func ParseFunction(str string, args ...interface{}) {
+/// go parseFunction(funcStr, channelString, i, i)
+/// go evaluateFunction(<-channelString, channelEval)
+func parseFunction(str string, args ...interface{}) {
 	if (reflect.TypeOf(args[0]).String()) != "chan string" {
 		log.Fatal("First argument must be a channel.")
 		return
@@ -92,7 +93,7 @@ func ParseFunction(str string, args ...interface{}) {
 	return
 }
 
-func EvaluateFunction(str string, out chan float64) {
+func evaluateFunction(str string, out chan float64) {
 	expression, _ := govaluate.NewEvaluableExpressionWithFunctions(str, functions)
 	val, _ := expression.Evaluate(nil)
 	out <- val.(float64)
@@ -100,7 +101,7 @@ func EvaluateFunction(str string, out chan float64) {
 
 /// args must be a pair of value name (string) and value (float64)
 /// example:
-/// go EvaluateWithParameters(funcStr, channelEval, "x", i, "y", i)
+/// go EvaluateWithParameters(funcStr, channelEval, "X", i, "Y", i)
 func EvaluateWithParameters(str string, out chan float64, args ...interface{}) {
 	pairLen := len(args) / 2
 	params := make(map[string]interface{}, pairLen)
@@ -114,8 +115,8 @@ func EvaluateWithParameters(str string, out chan float64, args ...interface{}) {
 
 /// example:
 /// parameters := make(map[string]interface{}, 1)
-/// parameters["x"] = i;
-/// parameters["y"] = i;
+/// parameters["X"] = i;
+/// parameters["Y"] = i;
 /// go EvaluateWithParameters2(funcStr, parameters, channelEval)
 /// go FlushChannel(channelEval)
 func EvaluateWithParameters2(str string, params map[string]interface{}, out chan float64) {

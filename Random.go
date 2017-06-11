@@ -23,7 +23,7 @@ func count() (x uint64) {
 	x = (1176*x_1 + 1476*x_2 + 1776*x_3) % mod
 	x_3, x_2, x_1 = x_2, x_1, x
 	//x_2 = x_1
-	//x_1 = x
+	//x_1 = X
 	return
 }
 
