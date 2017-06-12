@@ -1,17 +1,7 @@
 package goblackholes
 
 import (
-	//"fmt"
 	"math"
-	//"runtime"
-	"sync"
-	//"time"
-	//"os"
-	//"time"
-	//"os"
-	//"fmt"
-	//"runtime"
-	//"time"
 	"fmt"
 	"time"
 )
@@ -20,19 +10,16 @@ var (
 	agentAmount         int
 	singleServiceAmount int      = 50
 	slowmotion          int      = 0
-	border              Border_s// = Border_s{-1.5, -3.0, 4.0, 4.0, 0, 0, 0, 0}
-	agentList           []*Agent     //= make([]*Agent, agentAmount, agentAmount)
-	bestAgent           bestAgent_s  // = bestAgent_s{math.MaxFloat64, math.MaxFloat64, math.MaxFloat64, 0, 0, sync.Mutex{}}
-	newAgentChannel     chan *Agent  // = make(chan *Agent, agentAmount)
-	fitnessChannel      chan *Agent  // = make(chan *Agent, agentAmount)
-	getBestChannel      chan *Agent  // = make(chan *Agent, agentAmount)
-	moveChannel         chan *Agent  // = make(chan *Agent, agentAmount)
-	eventHorizonChannel chan *Agent  // = make(chan *Agent, agentAmount)
-	protoChannel        chan *Agent  //  = make(chan *Agent, agentAmount)
-	randomBuffer        chan float64 // = make(chan float64, agentAmount*5)
-	sendResults	bool = true
-	typeOfFunction TypeOfFunction_s //  TypeOfFunction_s{McCormick: true}
-	counter uint64
+	border              Border_s
+	agentList           []*Agent
+	bestAgent           bestAgent_s
+	newAgentChannel     chan *Agent
+	fitnessChannel      chan *Agent
+	getBestChannel      chan *Agent
+	moveChannel         chan *Agent
+	eventHorizonChannel chan *Agent
+	randomBuffer        chan float64
+	typeOfFunction TypeOfFunction_s
 )
 
 func Start(outputChan chan *Agent, quitChan chan bool, initVariables InitVariables) {
@@ -54,34 +41,27 @@ func Start(outputChan chan *Agent, quitChan chan bool, initVariables InitVariabl
 
 	<-quitChan
 	stopStatInfo = true
-	sendResults = false
 	defer func(){
 		if r := recover() ; r != nil{
 			fmt.Println("Recovered: ",r)
 		}
 	}()
-	//recover()
-	//close(outputChan)
 	return
 
 }
 
 func startComputing(outputChan chan *Agent) {
+	go func() {
+		defer func(){
+			if r := recover(); r != nil{
+			}
+		}()
+		getBest(getBestChannel, outputChan, fitnessChannel)
+	}()
 	for i := 0; i < singleServiceAmount; i++ {
 		go func() {
 			defer func(){
 				if r := recover(); r != nil{
-					//fmt.Println("service recovery: ", r)
-				}
-			}()
-			for {
-				getBest(getBestChannel, outputChan, <-fitnessChannel)
-			}
-		}()
-		go func() {
-			defer func(){
-				if r := recover(); r != nil{
-					//fmt.Println("service recovery: ", r)
 				}
 			}()
 			for {
@@ -91,7 +71,6 @@ func startComputing(outputChan chan *Agent) {
 		go func() {
 			defer func(){
 				if r := recover(); r != nil{
-					//fmt.Println("service recovery: ", r)
 				}
 			}()
 			for {
@@ -101,70 +80,27 @@ func startComputing(outputChan chan *Agent) {
 		go func() {
 			defer func(){
 				if r := recover(); r != nil{
-					//fmt.Println("service recovery: ", r)
 				}
 			}()
 			for {
-				countFitness(protoChannel, <-eventHorizonChannel)
+				countFitness(fitnessChannel, <-eventHorizonChannel)
 			}
 		}()
-		go func() {
-			defer func(){
-				if r := recover(); r != nil{
-					//fmt.Println("service recovery: ", r)
-				}
-			}()
-			for {
-				getProto := <-protoChannel
-				fitnessChannel <- getProto
-				if sendResults {
-					outputChan <- getProto
-				}
-			}
-		}()
+		//go func() {
+		//	defer func(){
+		//		if r := recover(); r != nil{
+		//		}
+		//	}()
+		//	for {
+		//		getProto := <-protoChannel
+		//		fitnessChannel <- getProto
+		//		if sendResults {
+		//			outputChan <- getProto
+		//		}
+		//	}
+		//}()
 	}
 }
-
-//func utils() {
-/// reports
-//go func() {
-//	for {
-//		select {
-//		case <-endComputing:
-//			return
-//		default:
-//			fmt.Println(bestAgent)
-//			fmt.Println(runtime.NumGoroutine())
-//			averageStepAmount := averageStepAmount()
-//			fmt.Println("averageStepAmount: ", averageStepAmount)
-//			time.Sleep(500 * time.Millisecond)
-//		}
-//	}
-//}()
-
-//// check if got the Best answer
-//go func() {
-//	<-maxAccuracy
-//	fmt.Println("It can't be bether:")
-//	for i := 0; i < 4*singleServiceAmount+10; i++ {
-//		endComputing <- true
-//	}
-//	fmt.Println(bestAgent)
-//	averageStepAmount := averageStepAmount()
-//	fmt.Println("averageStepAmount: ", averageStepAmount)
-//	exitProgram <- true
-//	return
-//}()
-//}
-
-//func averageStepAmount() uint64 {
-//	var averageStepAmount uint64
-//	for i := 0; i < agentAmount; i++ {
-//		averageStepAmount += agentList[i].Times
-//	}
-//	averageStepAmount /= uint64(agentAmount)
-//	return averageStepAmount
-//}
 
 func initialize() {
 	newAgentChannel = make(chan *Agent, agentAmount)
@@ -172,10 +108,9 @@ func initialize() {
 	getBestChannel = make(chan *Agent, agentAmount)
 	moveChannel = make(chan *Agent, agentAmount)
 	eventHorizonChannel = make(chan *Agent, agentAmount)
-	protoChannel = make(chan *Agent, agentAmount)
 	randomBuffer = make(chan float64, agentAmount*5)
 
-	bestAgent = bestAgent_s{math.MaxFloat64, math.MaxFloat64, math.MaxFloat64, 0, 0, sync.Mutex{}}
+	bestAgent = bestAgent_s{math.MaxFloat64, math.MaxFloat64, math.MaxFloat64, 0, 0}
 
 	go func() {
 		defer func(){
