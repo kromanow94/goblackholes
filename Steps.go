@@ -3,8 +3,9 @@ package goblackholes
 import (
 	"math"
 	//"sync/atomic"
-	"time"
+	//"time"
 	//"fmt"
+	"sync/atomic"
 )
 
 func countFitness(output chan *Agent, input *Agent) {
@@ -26,29 +27,24 @@ func countFitness(output chan *Agent, input *Agent) {
 	output <- input
 }
 
-func getBest(output chan *Agent, outputChan chan *Agent, input chan *Agent) {
-	for {
-		for i := 0; i < agentAmount; i++ {
-			agentList[i] = <-input
-		}
-		for _, agent := range agentList {
-			if bestAgent.fitness > agent.Fitness {
-				bestAgent.x = agent.X
-				bestAgent.y = agent.Y
-				bestAgent.fitness = agent.Fitness
-				bestAgent.step = agent.Times
+func getBest(output chan *Agent, outputChan chan *Agent, input *Agent) {
+		atomic.AddUint64(&counter, 1)
+			bestAgent.mutex.Lock()
+			if bestAgent.fitness > input.Fitness {
+				bestAgent.x = input.X
+				bestAgent.y = input.Y
+				bestAgent.fitness = input.Fitness
+				bestAgent.step = input.Times
 				outputChan <- bestAgent.Convert()
-				agent.newPosition()
+				input.newPosition()
 			}
-			agent.Times += 1
-			output <- agent
-			outputChan <- agent
-		}
-	}
+		bestAgent.mutex.Unlock()
+		input.Times += 1
+		output <- input
 }
 
+
 func move(output chan *Agent, input *Agent) {
-	time.Sleep(time.Duration(slowmotion) * time.Millisecond)
 	input.X += <-randomBuffer * (bestAgent.x - input.X)
 	input.Y += <-randomBuffer * (bestAgent.y - input.Y)
 	output <- input

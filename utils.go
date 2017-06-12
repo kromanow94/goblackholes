@@ -2,6 +2,7 @@ package goblackholes
 
 import (
 	"fmt"
+	"sync"
 )
 
 type Agent struct {
@@ -14,6 +15,7 @@ type Agent struct {
 type bestAgent_s struct {
 	x, y, fitness, eventHorizon float64
 	step                        uint64
+	mutex                       sync.Mutex
 }
 type Border_s struct {
 	X1, Y1, X2, Y2                                                     float64
